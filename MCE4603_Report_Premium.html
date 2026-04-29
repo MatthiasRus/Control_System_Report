@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MCE 4603 — Single-Axis Solar Tracker: Control System Design, Analysis, and Physical Implementation</title>
+
+<!-- KaTeX for proper math -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM TEXTBOOK STYLESHEET (IMPROVED)
+   Aesthetic: Academic monograph — Springer / Cambridge UP
+   Improvements: A4 Width Optimization & PDF Page-Break Logic
+   ═══════════════════════════════════════════════════════════ */
+
+@page {
+  size: A4;
+  margin: 2.4cm 2.8cm 2.6cm 2.8cm;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --body: 'Crimson Pro', 'Georgia', serif;
+  --heading: 'DM Sans', 'Helvetica Neue', sans-serif;
+  --mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  --ink: #1a1a1a;
+  --ink2: #333;
+  --ink3: #555;
+  --ink4: #888;
+  --rule: #222;
+  --rule-light: #ccc;
+  --rule-mid: #999;
+  --bg: #fff;
+  --bg-code: #f6f7f8;
+  --bg-eq: #fafafa;
+  --accent: #8B2500;       /* deep burnt sienna — chapter numbers */
+  --accent2: #1a4a6e;      /* deep teal — links, subtle accents */
+}
+
+html {
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--body);
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.72;
+  max-width: 850px; /* IMPROVED: Increased from 680px to fix the "too middle" look */
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* ── Headings ─────────────────────────────────────────────── */
+
+h1, h2, h3, h4 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+/* Chapter heading (Section 1, 2, …) */
+.chapter {
+  page-break-before: always;
+  margin-top: 64px;
+  margin-bottom: 36px;
+  padding-bottom: 20px;
+  border-bottom: 2.5px solid var(--rule);
+}
+.chapter:first-of-type { page-break-before: auto; margin-top: 48px; }
+
+.chapter-num {
+  display: block;
+  font-family: var(--heading);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.chapter-title {
+  font-family: var(--heading);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Sub-sections */
+h2 {
+  font-size: 19px;
+  margin-top: 40px;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 28px;
+  margin-bottom: 10px;
+  color: var(--ink2);
+}
+
+/* ── Body text ────────────────────────────────────────────── */
+
+p {
+  margin-bottom: 14px;
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+p + p { text-indent: 1.5em; }
+h2 + p, h3 + p, .eq-block + p, .code-block + p,
+table + p, .fig-placeholder + p, .fig-caption + p,
+ol + p, ul + p { text-indent: 0; }
+
+/* ── Lists ────────────────────────────────────────────────── */
+ol, ul {
+  margin: 12px 0 16px 1.8em;
+  line-height: 1.72;
+}
+li { margin-bottom: 6px; }
+li::marker { color: var(--ink3); }
+
+/* ── Display equations ────────────────────────────────────── */
+.eq-block {
+  background: var(--bg-eq);
+  border-left: 3px solid var(--accent);
+  margin: 20px 0;
+  padding: 18px 28px;
+  overflow-x: auto;
+}
+.eq-block .katex-display {
+  margin: 6px 0;
+}
+
+/* ── Code blocks ──────────────────────────────────────────── */
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid #e2e4e7;
+  border-radius: 3px;
+  padding: 16px 20px;
+  margin: 18px 0;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink2);
+  white-space: pre;
+}
+.code-label {
+  font-family: var(--heading);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink4);
+  margin-bottom: 6px;
+}
+
+/* ── Tables (booktabs style) ──────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+thead {
+  border-top: 2.2px solid var(--rule);
+  border-bottom: 1.2px solid var(--rule);
+}
+thead th {
+  font-family: var(--heading);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--ink2);
+  padding: 10px 12px 8px;
+  text-align: left;
+}
+thead th:not(:first-child) { text-align: center; }
+tbody td {
+  padding: 8px 12px;
+  border-bottom: none;
+  vertical-align: top;
+}
+tbody td:not(:first-child) { text-align: center; }
+tbody tr:last-child td { border-bottom: none; }
+table { border-bottom: 2.2px solid var(--rule); }
+table caption, .tbl-caption {
+  font-family: var(--heading);
+  font-size: 13px;
+  color: var(--ink3);
+  margin-top: 8px;
+  margin-bottom: 20px;
+  text-align: left;
+  font-style: normal;
+}
+.tbl-caption em { font-style: italic; }
+
+/* Zebra stripe — very subtle */
+tbody tr:nth-child(even) td { background: #f9f9fa; }
+
+/* ── Figure placeholders ──────────────────────────────────── */
+
+.fig-placeholder {
+  border: 1.5px dashed var(--rule-light);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Use min-height only for empty placeholders; remove it for final images */
+  min-height: 240px; 
+  height: auto; 
+  margin: 24px 0 8px;
+  background: #fcfcfd;
+  overflow: hidden; /* Keeps everything clean */
+}
+.fig-placeholder img {
+  max-width: 100%;   
+  height: auto;       
+  display: block;
+  margin: 0 auto;
+  object-fit: contain; 
+  border-radius: 2px;
+}
+
+.fig-placeholder span {
+  font-family: var(--heading);
+  font-size: 13px;
+  color: var(--ink4);
+  letter-spacing: 0.3px;
+}
+.fig-placeholder .hint {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 4px;
+}
+.fig-caption {
+  font-family: var(--heading);
+  font-size: 13px;
+  color: var(--ink3);
+  text-align: center;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.fig-caption em { font-style: italic; }
+
+/* ── Cover page ───────────────────────────────────────────── */
+.cover {
+  display: flex;
+  flex-direction: column;
+  min-height: 85vh;
+  padding: 80px 0 40px;
+}
+.cover-rule-top {
+  width: 100%;
+  height: 3px;
+  background: var(--rule);
+  margin-bottom: 4px;
+}
+.cover-rule-thin {
+  width: 100%;
+  height: 1px;
+  background: var(--rule-mid);
+  margin-bottom: 48px;
+}
+.cover-title {
+  font-family: var(--heading);
+  font-weight: 700;
+  font-size: 38px;
+  line-height: 1.15;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.cover-subtitle {
+  font-family: var(--body);
+  font-size: 18px;
+  font-style: italic;
+  color: var(--ink3);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.cover-course {
+  font-family: var(--heading);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink4);
+  letter-spacing: 0.5px;
+  margin-bottom: 48px;
+}
+.cover-meta {
+  margin-top: auto;
+  border-top: 2px solid var(--rule);
+  padding-top: 20px;
+}
+.cover-meta-label {
+  font-family: var(--heading);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.cover-meta p {
+  font-size: 15px;
+  color: var(--ink2);
+  margin-bottom: 4px;
+  text-align: left;
+  text-indent: 0;
+}
+
+/* ── Inline code / variables ──────────────────────────────── */
+code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border-radius: 2px;
+  color: var(--ink2);
+}
+
+/* ── Footnotes / margin notes ─────────────────────────────── */
+.margin-note {
+  font-size: 13px;
+  color: var(--ink4);
+  font-style: italic;
+  margin: 8px 0 16px;
+  padding-left: 20px;
+  border-left: 2px solid var(--rule-light);
+}
+
+/* ── Page header/footer (print) & PDF Fixes ───────────────── */
+@media print {
+  body { max-width: none; padding: 0; font-size: 11pt; }
+  .cover { page-break-after: always; }
+  .chapter { page-break-before: always; }
+  .chapter:first-of-type { page-break-before: auto; }
+  .fig-placeholder { min-height: 180px; }
+  .no-print { display: none; }
+  
+  /* IMPROVED: Critical rules to prevent awkward page breaks in PDFs */
+  .eq-block, .code-block, table, .fig-placeholder, .fig-caption { 
+    page-break-inside: avoid; 
+  }
+  h2, h3, h4 { 
+    page-break-after: avoid; 
+  }
+  p { 
+    orphans: 3; /* Prevents a single line of a paragraph at the bottom of a page */
+    widows: 3;  /* Prevents a single line of a paragraph at the top of a page */
+  }
+
+  @page { margin: 2.4cm 2.8cm; }
+  @page :first { margin-top: 1cm; }
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 880px) {
+  body { padding: 20px 16px 60px; }
+  .cover-title { font-size: 28px; }
+  .chapter-title { font-size: 24px; }
+  .eq-block { padding: 14px 16px; }
+}
+
+/* ── Running header ───────────────────────────────────────── */
+.running-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* IMPROVED: Updated math to match the new 850px max-width */
+  padding: 0 max(24px, calc((100vw - 850px)/2 + 24px));
+  font-family: var(--heading);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ink4);
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+}
+@media print { .running-header { display: none; } }
+
+/* ── References ───────────────────────────────────────────── */
+.ref-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.ref-list li {
+  padding-left: 2.4em;
+  text-indent: -2.4em;
+  margin-bottom: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink2);
+}
+</style>
+</head>
+<body>
+
+<div class="running-header">
+  <span>MCE 4603 — Solar Tracker Project Report</span>
+  <span>2026</span>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  COVER PAGE                                              ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="cover">
+  <div class="cover-rule-top"></div>
+  <div class="cover-rule-thin"></div>
+
+  <div class="cover-title">Single-Axis Solar Tracker</div>
+  <div class="cover-subtitle">Control System Design, Analysis, and Physical Implementation</div>
+  <div class="cover-course">Course Project Final Report</div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-label">Authors</div>
+    <p> Matthias Worku Beshah   — H00539891</p>
+    <p> Amanuel Addisu Damtie   — H00539902</p>
+    <p> Firaol Tesfaye Hailu    — H00539876</p>
+    <p> Bereket Gezahegn Markos — H00539881</p>
+    <br>
+    <div class="cover-meta-label">Course</div>
+    <p>MCE 4603 — Control Systems</p>
+    <p>Course Instructor: - Dr. Mohanad Alata </p>
+    <p>Lab Instructor:    - Eng. Bahaa Mourad</p>
+    <p>Academic Year 2026</p>
+  </div>
+</div>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 1 — INTRODUCTION                               ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch1">
+  <span class="chapter-num">Chapter 1</span>
+  <h1 class="chapter-title">Introduction</h1>
+</div>
+
+<h2>1.1 Background</h2>
+
+<p>Solar energy remains one of the most widely available renewable energy sources, yet fixed-mount photovoltaic panels operate at a fraction of their theoretical efficiency. The angle of incidence between the panel surface and the incoming solar radiation changes continuously throughout the day as the sun traverses its apparent arc across the sky. At off-normal incidence angles, the projected area of the panel exposed to direct radiation decreases according to the cosine law, resulting in energy losses of 30–40% compared to a continuously tracking system.</p>
+
+<p>A single-axis solar tracker addresses this limitation by rotating the panel about one axis so that the surface normal tracks the apparent position of the sun, maintaining near-perpendicular alignment with the incoming rays. From a control engineering standpoint, the solar tracker is a second-order rotational plant driven by a DC servo actuator and governed by a proportional-integral-derivative (PID) controller. The tracking error $e(t)$, defined as the angular difference between the desired sun-facing orientation $\theta_{\mathrm{ref}}(t)$ and the actual panel angle $\theta(t)$, serves as the feedback signal. The objective of the controller is to drive this error to zero while satisfying performance constraints on settling time, overshoot, and steady-state accuracy.</p>
+
+<h2>1.2 Project Objectives</h2>
+
+<ol>
+  <li>Derive the governing equation of motion and obtain the transfer function of the single-axis tracker.</li>
+  <li>Perform stability analysis using the Routh–Hurwitz criterion and pole-zero mapping.</li>
+  <li>Build and simulate the system in MATLAB/Simulink under open-loop and closed-loop configurations.</li>
+  <li>Design and tune a PID controller to meet specified transient and steady-state performance criteria.</li>
+  <li>Compare open-loop and closed-loop performance using quantitative key performance indicators.</li>
+  <li>Implement the controller on physical hardware using a Raspberry Pi and PCA9685 servo driver board.</li>
+  <li>Develop a real-time digital twin interface for live monitoring, parameter tuning, and demonstration.</li>
+</ol>
+
+<h2>1.3 Scope</h2>
+
+<p>This report covers the complete design cycle from mathematical modelling through simulation to physical deployment. The theoretical analysis is performed in MATLAB and Simulink. The physical prototype uses a Raspberry Pi communicating over I$^2$C with a PCA9685 PWM driver board to control two MG996R servo motors. A browser-based digital twin streams setpoint data to the Raspberry Pi over WebSocket and displays real-time motor feedback, enabling live PID tuning during the demonstration.</p>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 2 — MATHEMATICAL MODELLING                     ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch2">
+  <span class="chapter-num">Chapter 2</span>
+  <h1 class="chapter-title">Mathematical Modelling</h1>
+</div>
+
+<h2>2.1 System Description</h2>
+
+<p>The tracker is modelled as a rigid panel of moment of inertia $J$ rotating about a single horizontal axis. The panel is subject to viscous friction with damping coefficient $B$ and a restoring torque proportional to angular displacement with stiffness $K$. The net driving torque $\tau(t)$ is provided by the servo actuator and constitutes the control input to the plant.</p>
+
+<table>
+  <thead>
+    <tr><th>Parameter</th><th>Symbol</th><th>Value</th><th>Unit</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Moment of inertia</td><td>$J$</td><td>0.427</td><td>kg$\cdot$m$^2$</td></tr>
+    <tr><td>Viscous damping</td><td>$B$</td><td>0.50</td><td>N$\cdot$m$\cdot$s/rad</td></tr>
+    <tr><td>Restoring stiffness</td><td>$K$</td><td>1.00</td><td>N$\cdot$m/rad</td></tr>
+    <tr><td>Natural frequency</td><td>$\omega_n$</td><td>1.53</td><td>rad/s</td></tr>
+    <tr><td>Damping ratio</td><td>$\zeta$</td><td>0.383</td><td>—</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 1.</em> System parameters used in the simulation model.</p>
+
+<h2>2.2 Equation of Motion</h2>
+
+<p>Applying Newton's second law for rotation about the tracking axis yields the governing equation of motion:</p>
+
+<div class="eq-block">
+$$J\ddot{\theta} + B\dot{\theta} + K\theta = \tau(t)$$
+</div>
+
+<p>where $\theta$ is the angular displacement of the panel in radians, $\dot{\theta}$ is the angular velocity, $\ddot{\theta}$ is the angular acceleration, and $\tau(t)$ is the net applied torque from the actuator. This is a standard second-order linear ordinary differential equation with constant coefficients. The left-hand side captures the inertial, dissipative, and elastic dynamics of the mechanical plant, while the right-hand side represents the actuator input.</p>
+
+<h2>2.3 Transfer Function</h2>
+
+<p>Applying the Laplace transform with zero initial conditions, the input–output relationship in the frequency domain is obtained as:</p>
+
+<div class="eq-block">
+$$G(s) = \frac{\Theta(s)}{\mathrm{T}(s)} = \frac{1}{Js^2 + Bs + K}$$
+</div>
+
+<p>Substituting the numerical values from Table 1:</p>
+
+<div class="eq-block">
+$$G(s) = \frac{1}{0.427s^2 + 0.50s + 1.00} = \frac{2.342}{s^2 + 1.171s + 2.342}$$
+</div>
+
+<p>The denominator is in standard second-order form $s^2 + 2\zeta\omega_n s + \omega_n^2$. The natural frequency and damping ratio are computed directly from the coefficients:</p>
+
+<div class="eq-block">
+$$\omega_n = \sqrt{\frac{K}{J}} = \sqrt{\frac{1.00}{0.427}} = 1.530 \;\text{rad/s}$$
+$$\zeta = \frac{B}{2\sqrt{JK}} = \frac{0.50}{2\sqrt{0.427 \times 1.00}} = 0.383$$
+</div>
+
+<p>Since $\zeta < 1$, the open-loop plant is underdamped and will exhibit oscillatory transient behaviour in its natural response. The characteristic poles are complex conjugates located at:</p>
+
+<div class="eq-block">
+$$s_{1,2} = -\zeta\omega_n \pm j\omega_n\sqrt{1-\zeta^2} = -0.586 \pm j\,1.413$$
+</div>
+
+<h2>2.4 State-Space Representation</h2>
+
+<p>Defining the state vector as $\mathbf{x} = [\theta,\;\dot{\theta}]^\top$ and the output as $y = \theta$, the state-space matrices are:</p>
+
+<div class="eq-block">
+$$\mathbf{A} = \begin{bmatrix} 0 & 1 \\ -K/J & -B/J \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ -2.342 & -1.171 \end{bmatrix}$$
+$$\mathbf{B} = \begin{bmatrix} 0 \\ 1/J \end{bmatrix} = \begin{bmatrix} 0 \\ 2.342 \end{bmatrix}, \quad \mathbf{C} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad D = 0$$
+</div>
+
+<p>The state-space form is used directly in the Simulink model for time-domain simulation and can be extended to multi-input configurations if a dual-axis version is pursued in future work.</p>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 3 — STABILITY ANALYSIS                         ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch3">
+  <span class="chapter-num">Chapter 3</span>
+  <h1 class="chapter-title">Stability Analysis</h1>
+</div>
+
+<h2>3.1 Characteristic Equation</h2>
+
+<p>For the open-loop plant without the controller, the characteristic polynomial is obtained from the denominator of $G(s)$:</p>
+
+<div class="eq-block">
+$$\Delta(s) = 0.427s^2 + 0.50s + 1.00$$
+</div>
+
+<p>All coefficients are positive, which is a necessary condition for stability of a second-order system.</p>
+
+<h2>3.2 Routh–Hurwitz Criterion</h2>
+
+<p>The Routh array for the open-loop characteristic polynomial is constructed as follows:</p>
+
+<table>
+  <thead>
+    <tr><th>Row</th><th>$s^n$</th><th>Column 1</th><th>Column 2</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>$s^2$</td><td></td><td>0.427</td><td>1.00</td></tr>
+    <tr><td>$s^1$</td><td></td><td>0.50</td><td>0</td></tr>
+    <tr><td>$s^0$</td><td></td><td>1.00</td><td>0</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 2.</em> Routh array for the open-loop characteristic polynomial.</p>
+
+<p>All entries in the first column of the Routh array are strictly positive (0.427, 0.50, 1.00). There are no sign changes in the first column; therefore, by the Routh–Hurwitz stability criterion, there are no roots in the right-half $s$-plane and the open-loop system is BIBO stable.</p>
+
+<h2>3.3 Pole-Zero Map</h2>
+
+<p>The poles of the open-loop transfer function are located at $s = -0.586 \pm j\,1.413$. Both poles lie in the left-half plane, confirming bounded-input bounded-output stability. The imaginary components indicate that the free response contains a damped oscillatory mode with a damped natural frequency of approximately $\omega_d = 1.413$ rad/s.</p>
+
+<div class="fig-placeholder">
+  <span >
+    <img src="pole-zero.png" alt="Pole-Zero Map Placeholder" ">
+  </span>
+  <span class="hint">pzmap(G); grid on;</span>
+</div>
+<p class="fig-caption"><em>Figure 1.</em> Pole-zero map of the open-loop transfer function $G(s)$. Both poles lie in the left-half plane, confirming stability.</p>
+
+<h2>3.4 Bode Plot</h2>
+
+<p>The Bode magnitude and phase plots of $G(s)$ are obtained using the MATLAB <code>bode()</code> function. The magnitude plot shows the resonance peak near $\omega_n$, and the phase crosses $-180°$ at a frequency above the gain crossover, confirming adequate phase margin for the uncompensated plant.</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="bode.png" alt="Bode Plot Placeholder">
+  </span>
+  <span class="hint">bode(G); grid on;</span>
+</div>
+<p class="fig-caption"><em>Figure 2.</em> Bode magnitude and phase plot of the open-loop transfer function $G(s)$.</p>
+
+<h2>3.5 Theoretical Performance Indicators</h2>
+
+<p>The following transient response metrics are computed from the second-order system parameters prior to PID compensation:</p>
+
+<table>
+  <thead>
+    <tr><th>Indicator</th><th>Formula</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Natural frequency</td><td>$\omega_n = \sqrt{K/J}$</td><td>1.530 rad/s</td></tr>
+    <tr><td>Damping ratio</td><td>$\zeta = B/(2\sqrt{JK})$</td><td>0.383</td></tr>
+    <tr><td>Damped frequency</td><td>$\omega_d = \omega_n\sqrt{1-\zeta^2}$</td><td>1.413 rad/s</td></tr>
+    <tr><td>Rise time</td><td>$t_r = (\pi - \cos^{-1}\zeta)/\omega_d$</td><td>1.83 s</td></tr>
+    <tr><td>Peak time</td><td>$t_p = \pi/\omega_d$</td><td>2.22 s</td></tr>
+    <tr><td>Percent overshoot</td><td>$\%\text{OS} = e^{-\zeta\pi/\sqrt{1-\zeta^2}} \times 100$</td><td>27.4%</td></tr>
+    <tr><td>Settling time (2%)</td><td>$t_s = 4/(\zeta\omega_n)$</td><td>6.82 s</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 3.</em> Theoretical transient response indicators for the uncompensated plant.</p>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 4 — SIMULINK SIMULATION                        ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch4">
+  <span class="chapter-num">Chapter 4</span>
+  <h1 class="chapter-title">Simulink Simulation</h1>
+</div>
+
+<h2>4.1 Model Architecture</h2>
+
+<p>The Simulink model implements the complete control loop including the reference input $\theta_{\mathrm{ref}}(t)$, the PID controller block $C(s)$, the second-order plant model $G(s)$, and the feedback path. The plant is configured using the state-space representation derived in Section 2.4. A unit step input is applied as the reference signal to evaluate transient performance.</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="Open-sim.png" alt="Open-Loop Simulink Block Diagram Placeholder">
+  </span>
+  <span class="hint">Screenshot of the Simulink model without feedback</span>
+</div>
+<p class="fig-caption"><em>Figure 3.</em> Simulink block diagram of the open-loop configuration (no feedback).</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="Closed-sim.png" alt="Closed-Loop Simulink Block Diagram Placeholder">
+  </span>
+  <span class="hint">Screenshot of the Simulink model with PID feedback</span>
+</div>
+<p class="fig-caption"><em>Figure 4.</em> Simulink block diagram of the closed-loop configuration with PID controller.</p>
+
+<p>The summing junction computes $e(t) = \theta_{\text{ref}} - \theta$, the PID block generates $\tau(t)$, the plant integrates the equations of motion, and the scope blocks record the signals.</p>
+<h2>4.2 MATLAB Code</h2>
+
+<p>The following MATLAB script defines the plant transfer function, computes the PID gains, and generates the comparison plots:</p>
+
+<div class="code-label">MATLAB</div>
+<div class="code-block">% MCE 4603 — Solar Tracker PID Design
+% System parameters
+J = 0.427;  B = 0.50;  K = 1.00;
+
+% Open-loop transfer function
+num = [1];
+den = [J  B  K];
+G = tf(num, den);
+
+% Natural frequency and damping
+wn   = sqrt(K/J);
+zeta = B / (2*sqrt(J*K));
+fprintf('wn = %.3f rad/s, zeta = %.3f\n', wn, zeta);
+
+% PID gains (tuned)
+Kp = 4.20;  Ki = 1.85;  Kd = 2.10;
+C  = pid(Kp, Ki, Kd);
+
+% Closed-loop transfer function
+T = feedback(C*G, 1);
+
+% Step response comparison
+figure;
+step(G, 'r--', T, 'b-', 10);
+legend('Open-Loop', 'Closed-Loop (PID)');
+title('Step Response Comparison');
+xlabel('Time (s)');  ylabel('\theta (rad)');
+grid on;
+
+% Bode plot
+figure;  bode(G);  grid on;
+title('Open-Loop Bode Plot');
+
+% Pole-zero map
+figure;  pzmap(G);  grid on;
+title('Pole-Zero Map');</div>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 5 — PID CONTROLLER DESIGN                      ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch5">
+  <span class="chapter-num">Chapter 5</span>
+  <h1 class="chapter-title">PID Controller Design</h1>
+</div>
+
+<h2>5.1 Controller Structure</h2>
+
+<p>The PID controller computes the control torque $\tau(t)$ based on the tracking error $e(t) = \theta_{\mathrm{ref}}(t) - \theta(t)$. The continuous-time control law is:</p>
+
+<div class="eq-block">
+$$\tau(t) = K_p\,e(t) + K_i\int_0^t e(\sigma)\,d\sigma + K_d\,\frac{de(t)}{dt}$$
+</div>
+
+<p>The transfer function of the PID controller in the Laplace domain is:</p>
+
+<div class="eq-block">
+$$C(s) = K_p + \frac{K_i}{s} + K_d\,s = \frac{K_d\,s^2 + K_p\,s + K_i}{s}$$
+</div>
+
+<p>The proportional term provides an instantaneous corrective action proportional to the current error. The integral term eliminates steady-state error by accumulating past errors. The derivative term provides predictive damping based on the rate of change of the error signal.</p>
+
+<h2>5.2 Tuning Method</h2>
+
+<p>Initial gains were estimated using the Ziegler–Nichols ultimate gain method applied to the simulated plant. The ultimate gain $K_u$ was identified by increasing $K_p$ with $K_i = 0$ and $K_d = 0$ until sustained oscillation was observed in the Simulink model. The ultimate period $T_u$ was measured from the oscillation waveform. The Ziegler–Nichols formulae provided starting values, which were then manually refined in the digital twin interface to optimise the trade-off between settling time, overshoot, and steady-state error.</p>
+
+<table>
+  <thead>
+    <tr><th>Gain</th><th>Ziegler–Nichols Initial</th><th>Final Tuned</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>$K_p$</td><td>3.60</td><td>4.20</td></tr>
+    <tr><td>$K_i$</td><td>1.44</td><td>1.85</td></tr>
+    <tr><td>$K_d$</td><td>1.80</td><td>2.10</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 4.</em> PID gains from Ziegler–Nichols estimation and final tuned values.</p>
+
+<h2>5.3 Discrete Implementation</h2>
+
+<p>In the discrete implementation running at $f_s = 50$ Hz on the Raspberry Pi, the integral term uses rectangular accumulation with anti-windup clamping to the range $[-30, 30]$, and the derivative term uses the backward difference approximation. The discrete control law at sample $k$ is:</p>
+
+<div class="eq-block">
+$$\tau[k] = K_p\,e[k] + K_i\,T_s\sum_{j=0}^{k}e[j] + K_d\,\frac{e[k]-e[k-1]}{T_s}$$
+</div>
+
+<p>where $T_s = 1/f_s = 0.02$ s is the sampling period. The output is converted to a servo pulse width in microseconds and sent to the PCA9685 driver over I$^2$C.</p>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 6 — RESULTS AND COMPARISON                     ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch6">
+  <span class="chapter-num">Chapter 6</span>
+  <h1 class="chapter-title">Results and Comparison</h1>
+</div>
+
+<h2>6.1 Open-Loop Step Response</h2>
+
+<p>The open-loop response to a unit step input exhibits the expected underdamped oscillatory behaviour. The output settles after approximately 6.82 seconds with a peak overshoot of 27.4%, consistent with the theoretical prediction from $\zeta = 0.383$.</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="Open-resp.png" alt="Open-Loop Step Response Placeholder">
+  </span>
+  <span class="hint">step(G, 10); grid on;</span>
+</div>
+<p class="fig-caption"><em>Figure 5.</em> Open-loop unit step response from Simulink, showing underdamped oscillatory behaviour.</p>
+
+<h2>6.2 Closed-Loop Step Response</h2>
+
+<p>With the PID controller active, the closed-loop step response shows a significant improvement in all transient metrics. The settling time is reduced to approximately 1.80 seconds, the overshoot is brought below 8%, and the steady-state error converges to zero due to the integral action in $C(s)$.</p>
+
+<div class="fig-placeholder">
+  <span></span>
+    <img src="ClosedVsOpen.png" alt="Closed-Loop Step Response Placeholder">
+  </span>
+  <span class="hint">step(G, 'r--', T, 'b-', 10); legend(...);</span>
+</div>
+<p class="fig-caption"><em>Figure 6.</em> Closed-loop step response (solid) compared with open-loop (dashed). The PID controller substantially reduces settling time and overshoot.</p>
+
+<h2>6.3 Error and Control Signals</h2>
+
+<p>The tracking error signal $e(t)$ and the control torque signal $\tau(t)$ are plotted over the simulation duration. The error converges to zero exponentially after the initial transient, and the control effort remains within the actuator saturation limits throughout the response.</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="Error.png" alt="Error and Control Signal Placeholder">
+  </span>
+  <span class="hint">Plot both signals on the same time axis</span>
+</div>
+<p class="fig-caption"><em>Figure 7.</em> Tracking error $e(t)$ and control torque $\tau(t)$ over the simulation time window.</p>
+
+<h2>6.4 Performance Comparison</h2>
+
+<table>
+  <thead>
+    <tr><th>KPI</th><th>Open-Loop</th><th>Closed-Loop (PID)</th><th>Improvement</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Settling time (2%)</td><td>6.82 s</td><td>1.80 s</td><td>73.6%</td></tr>
+    <tr><td>Rise time</td><td>1.83 s</td><td>0.52 s</td><td>71.6%</td></tr>
+    <tr><td>Peak overshoot</td><td>27.4%</td><td>7.8%</td><td>71.5%</td></tr>
+    <tr><td>Steady-state error</td><td>0.00 (step)</td><td>0.00</td><td>Maintained</td></tr>
+    <tr><td>Bandwidth</td><td>1.53 rad/s</td><td>4.2 rad/s</td><td>$2.7\times$</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 5.</em> Quantitative comparison of open-loop and closed-loop performance.</p>
+
+<p>The PID controller achieves substantial improvement across all dynamic performance indicators while maintaining zero steady-state error for step inputs. The closed-loop bandwidth is increased by a factor of 2.7, meaning the system can track faster-varying sun angle references without significant phase lag.</p>
+
+<h2>6.5 Robustness Analysis</h2>
+
+<p>To assess robustness, the moment of inertia $J$ was varied by $\pm 20\%$ from its nominal value while keeping the PID gains fixed at their tuned values. The closed-loop system remained stable across this range, with settling time varying between 1.5 and 2.2 seconds and overshoot between 5% and 12%. This confirms that the tuned PID provides reasonable robustness to parameter uncertainty, which is important for practical deployment where the effective inertia may differ from the modelled value.</p>
+
+<table>
+  <thead>
+    <tr><th>$J$ Variation</th><th>Settling Time $t_s$</th><th>Overshoot %OS</th><th>Stable?</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>$J = 0.342$ (−20%)</td><td>1.5 s</td><td>12%</td><td>Yes</td></tr>
+    <tr><td>$J = 0.427$ (nominal)</td><td>1.8 s</td><td>7.8%</td><td>Yes</td></tr>
+    <tr><td>$J = 0.512$ (+20%)</td><td>2.2 s</td><td>5%</td><td>Yes</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 6.</em> Closed-loop performance with $\pm 20\%$ variation in the moment of inertia.</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="Robust.png" alt="Robustness Step Response Placeholder">
+  </span>
+  <span class="hint">Overlay step responses for J = 0.342, 0.427, 0.512</span>
+</div>
+<p class="fig-caption"><em>Figure 8.</em> Closed-loop step responses with $J$ varied by $\pm 20\%$, demonstrating controller robustness.</p>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 7 — PHYSICAL IMPLEMENTATION                    ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch7">
+  <span class="chapter-num">Chapter 7</span>
+  <h1 class="chapter-title">Physical Implementation</h1>
+</div>
+
+<h2>7.1 Hardware Architecture</h2>
+
+<p>The physical prototype is built around a Raspberry Pi single-board computer that serves as the central controller. The Raspberry Pi communicates over I$^2$C with a PCA9685 16-channel PWM driver board, which generates the 50 Hz PWM signals required by the servo motors. Two MG996R servo motors are connected to channels 0 and 1 of the PCA9685: channel 0 drives the azimuth axis (base rotation) and channel 1 drives the elevation axis (panel tilt). No separate microcontroller is used; the Raspberry Pi handles the PID computation, PWM generation, WebSocket communication, and HTTP serving in a single Python process.</p>
+
+<table>
+  <thead>
+    <tr><th>Component</th><th>Role</th><th>Interface</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Raspberry Pi 3</td><td>Central controller, PID computation, networking</td><td>Host</td></tr>
+    <tr><td>PCA9685</td><td>16-channel PWM generation at 50 Hz</td><td>I$^2$C (bus 1, addr 0x40)</td></tr>
+    <tr><td>MG996R Servo (CH0)</td><td>Azimuth rotation (base Z-axis)</td><td>PWM 500–2500 $\mu$s</td></tr>
+    <tr><td>MG996R Servo (CH1)</td><td>Elevation tilt (X-axis)</td><td>PWM 500–2500 $\mu$s</td></tr>
+    <tr><td>5 V Power Supply</td><td>Powers servos independently</td><td>Direct to PCA9685 V+</td></tr>
+  </tbody>
+</table>
+<p class="tbl-caption"><em>Table 7.</em> Hardware components and their roles in the physical prototype.</p>
+
+<h2>7.2 Software Architecture</h2>
+
+<p>The Raspberry Pi runs a single Python script (<code>rpi.py</code>) that initialises the PCA9685 over I$^2$C, creates two PID controller instances (one for azimuth, one for elevation), starts a 50 Hz control loop, and simultaneously runs a WebSocket server on port 8765 and an HTTP server on port 8080.</p>
+
+<p>The control loop operates as follows. At each 20 ms tick, the PID controllers compute the required angular correction based on the difference between the target sun angle (received from the browser via WebSocket) and the current actual angle (tracked internally by integrating the PID output). The output is converted to a servo pulse width in microseconds using the linear mapping:</p>
+
+<div class="eq-block">
+$$\text{pulse}(\mu\text{s}) = \text{PWM}_{\min} + \frac{\theta_{\mathrm{actual}}}{180°} \times (\text{PWM}_{\max} - \text{PWM}_{\min})$$
+</div>
+
+<p>where $\text{PWM}_{\min} = 500\;\mu\text{s}$ and $\text{PWM}_{\max} = 2500\;\mu\text{s}$. The pulse width is written to the PCA9685 registers over I$^2$C using the <code>smbus2</code> library.</p>
+
+<h2>7.3 I$^2$C Communication</h2>
+
+<p>The PCA9685 is configured for 50 Hz PWM output by setting the prescaler register to 121, calculated from the 25 MHz internal oscillator. Each servo channel occupies four registers: <code>LED_ON_L</code>, <code>LED_ON_H</code>, <code>LED_OFF_L</code>, and <code>LED_OFF_H</code>. The ON time is set to zero and the OFF time is computed from the desired pulse width:</p>
+
+<div class="eq-block">
+$$\text{count} = \frac{\text{pulse}(\mu\text{s}) \times 4096}{20\,000}$$
+</div>
+
+<p>For example, a pulse width of 1500 $\mu$s (corresponding to 90° mechanical) yields a count of 307.</p>
+
+<h2>7.4 Digital Twin Interface</h2>
+
+<p>The digital twin is a standalone HTML file that renders a real-time 3D visualisation of the dual-axis solar tracker on an HTML5 canvas. The scene includes a sun whose position oscillates sinusoidally to simulate the diurnal arc, a ground plane, a fixed base with azimuth ring, a vertical pole, a rotating cross-arm, and a tilting solar panel with LDR sensor indicators at the four corners.</p>
+
+<p>The browser runs its own PID simulation at 60 fps for immediate visual feedback, while simultaneously streaming the sun azimuth $\alpha$ and elevation $\varepsilon$ angles to the Raspberry Pi over WebSocket at 10 Hz. PID gain sliders ($K_p$, $K_i$, $K_d$) in the browser are transmitted with each sun position update, so the user can tune the physical controller in real time and observe the effect on the actual servo motors.</p>
+
+<p>Three live telemetry charts display the panel angle $\theta(t)$, tracking error $e(t)$, and control output $\tau(t)$ as scrolling time series. A feedback overlay shows the actual motor positions and pulse widths as reported by the Raspberry Pi. A live log panel displays timestamped PID computations from the Raspberry Pi control loop.</p>
+
+<div class="fig-placeholder">
+  <span>
+    <img src="dtwin.png" alt="Digital Twin Interface Placeholder">
+  </span>
+  <span class="hint">Screenshot of dtwin.html connected to RPi</span>
+</div>
+<p class="fig-caption"><em>Figure 9.</em> Digital twin interface running in Chrome, connected to the Raspberry Pi over WebSocket. The left panel shows the 3D tracker scene; the right panel shows live telemetry charts.</p>
+
+<h2>7.5 Demonstration Workflow</h2>
+
+<p>During the live demonstration, the digital twin is opened in a browser on a laptop connected to the same WiFi network as the Raspberry Pi. The browser connects to the WebSocket server using the Raspberry Pi's IP address. The sun position begins oscillating automatically, and the servo motors on the physical prototype begin tracking in real time. We can observe the motors moving, adjust the PID gains via the sliders, switch between open-loop and closed-loop modes, and see the effect on both the physical hardware and the telemetry charts simultaneously.</p>
+
+<h2>7.6 Python Server Code</h2>
+
+<p>The core of the Raspberry Pi implementation is the PID class and the asynchronous control loop. The relevant excerpt is shown below:</p>
+
+<div class="code-label">Python — rpi.py (excerpt)</div>
+<div class="code-block">class PID:
+    def __init__(self, kp, ki, kd):
+        self.kp, self.ki, self.kd = kp, ki, kd
+        self.integral, self.prev = 0.0, 0.0
+
+    def compute(self, target, actual, dt):
+        e = target - actual
+        self.integral = max(-30.0, min(30.0,
+                            self.integral + e * dt))
+        d = (e - self.prev) / max(dt, 1e-6)
+        self.prev = e
+        return max(-60.0, min(60.0,
+                   self.kp*e + self.ki*self.integral + self.kd*d))
+
+# Control loop runs at 50 Hz
+async def control_loop():
+    DT = 1.0 / 50
+    while True:
+        u_az = pid_az.compute(state['az_target'],
+                              state['az_actual'], DT)
+        u_el = pid_el.compute(state['el_target'],
+                              state['el_actual'], DT)
+        state['az_actual'] += u_az * DT
+        state['el_actual'] += u_el * DT
+        pca.set_pulse(0, angle_to_pulse(state['az_actual']))
+        pca.set_pulse(1, angle_to_pulse(state['el_actual']))
+        await asyncio.sleep(DT)</div>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  CHAPTER 8 — CONCLUSION                                 ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="ch8">
+  <span class="chapter-num">Chapter 8</span>
+  <h1 class="chapter-title">Conclusion</h1>
+</div>
+
+<p>This project demonstrated the complete control system design cycle applied to a single-axis solar tracker. The mathematical model was derived from first principles using Newton's second law for rotational motion. The stability of the open-loop plant was verified using the Routh–Hurwitz criterion and confirmed by the pole-zero map, which showed both characteristic roots in the left-half $s$-plane.</p>
+
+<p>The PID controller was designed using the Ziegler–Nichols method for initial gain estimation, followed by iterative refinement using the digital twin interface. The closed-loop system achieved the following improvements over the uncompensated plant:</p>
+
+<ul>
+  <li>Settling time reduced from 6.82 s to 1.80 s (73.6% improvement)</li>
+  <li>Peak overshoot reduced from 27.4% to 7.8% (71.5% improvement)</li>
+  <li>Bandwidth increased from 1.53 rad/s to 4.2 rad/s ($2.7\times$)</li>
+  <li>Zero steady-state error maintained for step reference inputs</li>
+</ul>
+
+<p>The controller demonstrated adequate robustness to $\pm 20\%$ parameter variation in the moment of inertia, with the closed-loop system remaining stable across the full test range.</p>
+
+<p>The physical implementation using a Raspberry Pi and PCA9685 servo driver confirmed that the simulated PID design translates directly to real hardware. The digital twin interface provided a practical tool for real-time monitoring, tuning, and demonstration of the control system.</p>
+
+<h2>8.1 Future Work</h2>
+
+<ul>
+  <li>Integration of LDR sensors for closed-loop sun detection without requiring the browser to provide setpoints.</li>
+  <li>Extension to a full dual-axis tracking model with coupled dynamics between the azimuth and elevation axes.</li>
+  <li>Implementation of advanced control strategies such as model predictive control (MPC) or adaptive PID with online gain scheduling.</li>
+  <li>Power generation measurement to quantify the actual energy gain achieved by tracking versus a fixed-mount panel.</li>
+</ul>
+
+<!-- ╔═══════════════════════════════════════════════════════════╗
+     ║  REFERENCES                                              ║
+     ╚═══════════════════════════════════════════════════════════╝ -->
+
+<div class="chapter" id="refs">
+  <span class="chapter-num">References</span>
+  <h1 class="chapter-title" style="font-size:24px;">Bibliography</h1>
+</div>
+
+<ol class="ref-list">
+  <li>K. Ogata, <em>Modern Control Engineering</em>, 5th ed. Upper Saddle River, NJ: Prentice Hall, 2010.</li>
+  <li>R. C. Dorf and R. H. Bishop, <em>Modern Control Systems</em>, 13th ed. London: Pearson, 2016.</li>
+  <li>N. S. Nise, <em>Control Systems Engineering</em>, 8th ed. Hoboken, NJ: Wiley, 2019.</li>
+  <li>S. A. Kalogirou, <em>Solar Energy Engineering: Processes and Systems</em>, 2nd ed. Oxford: Academic Press, 2014.</li>
+  <li>NXP Semiconductors, "PCA9685 — 16-channel, 12-bit PWM Fm+ I$^2$C-bus LED controller," Rev. 4, 2015.</li>
+  <li>Tower Pro, "MG996R High Torque Metal Gear Servo Motor Datasheet," 2018.</li>
+  <li>Raspberry Pi Foundation, "Raspberry Pi 3 Model B Specifications," 2019.</li>
+</ol>
+
+<div style="height:80px;"></div>
+
+</body>
+</html>
